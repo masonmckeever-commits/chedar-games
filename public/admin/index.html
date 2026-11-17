@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>admin panel</title>
+  <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/5930/5930147.png" type="image/png" />
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg: #0e0e10;
+      --bg-2: #18181c;
+      --bg-3: #222228;
+      --border: rgba(255, 255, 255, 0.07);
+      --border-2: rgba(255, 255, 255, 0.13);
+      --text: #f0eff4;
+      --text-2: #9997a8;
+      --text-3: #5c5a6e;
+      --accent: #7c6af7;
+      --accent-2: #a594ff;
+      --accent-bg: rgba(124, 106, 247, 0.12);
+      --danger: #e05555;
+      --success: #47c27b;
+      --font: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      --radius: 10px;
+    }
+
+    html, body {
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    body { padding-bottom: 60px; }
+
+    input, textarea, select, button {
+      font-family: inherit;
+      font-size: 13px;
+      color: var(--text);
+      background: var(--bg-3);
+      border: 1px solid var(--border-2);
+      
+      padding: 8px 10px;
+      outline: none;
+    }
+
+    input:focus, textarea:focus, select:focus { border-color: var(--accent); }
+
+    button {
+      cursor: pointer;
+      font-weight: 600;
+      box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.35);
+      transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+    }
+    button:hover { filter: brightness(1.15); }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    button:not(:disabled):active { transform: translate(2px, 2px); box-shadow: none; }
+
+    .btn { background: var(--accent); border-color: var(--accent); }
+    .btn-ghost { background: var(--bg-3); }
+    .btn-danger { background: rgba(224, 85, 85, 0.15); border-color: rgba(224, 85, 85, 0.35); color: var(--danger); }
+    .set-banner-game { white-space: nowrap; }
+    .set-banner-game.is-selected { background: var(--success); border-color: var(--success); color: #0e0e10; opacity: 1; }
+
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 14px 20px;
+      background: var(--bg-2);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 20;
+    }
+    .header h1 { font-size: 16px; letter-spacing: -0.3px; flex: 1; }
+    .header a { color: var(--accent-2); text-decoration: none; font-size: 13px; font-weight: 600; }
+    .header a:hover { text-decoration: underline; }
+
+    .wrap { max-width: 1200px; margin: 0 auto; padding: 24px 20px; }
+
+    .tabs { display: flex; gap: 8px; margin-bottom: 20px; }
+    .tabs button {
+      background: transparent;
+      border: 1px solid var(--border-2);
+      color: var(--text-2);
+    }
+    .tabs button.active { background: var(--accent-bg); border-color: var(--accent); color: var(--accent-2); }
+
+    .card {
+      background: var(--bg-2);
+      border: 1px solid var(--border);
+      
+      padding: 18px;
+      margin-bottom: 18px;
+    }
+    .card h2 { font-size: 15px; margin-bottom: 14px; }
+
+    .muted { color: var(--text-3); }
+    .msg { font-size: 13px; margin-top: 10px; min-height: 18px; }
+    .msg.ok { color: var(--success); }
+    .msg.err { color: var(--danger); }
+
+    /* Login */
+    .login-center { min-height: 80vh; display: flex; align-items: center; justify-content: center; }
+    .login-center[hidden] { display: none; }
+    .login-box { width: 100%; max-width: 380px; text-align: center; }
+    .login-box h1 { font-size: 20px; margin-bottom: 6px; }
+    .login-box .muted { margin-bottom: 18px; }
+    .login-box form { display: flex; flex-direction: column; gap: 10px; }
+    .login-box input { width: 100%; text-align: center; }
+
+    /* Games */
+    .toolbar { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; align-items: center; }
+    .toolbar input[type="search"] { flex: 1; min-width: 200px; }
+
+    .game-row {
+      display: grid;
+      grid-template-columns: 64px 90px 1.2fr 1fr 1.4fr 1.2fr 70px auto;
+      gap: 10px;
+      align-items: start;
+      padding: 12px;
+      border: 1px solid var(--border);
+      
+      background: var(--bg);
+      margin-bottom: 10px;
+    }
+    .game-row label { display: block; font-size: 11px; color: var(--text-3); margin-bottom: 4px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; }
+    .game-row input { width: 100%; }
+    .game-row .thumb { width: 64px; height: 64px; object-fit: cover;  border: 1px solid var(--border-2); background: var(--bg-3); }
+    .game-row .img-inline { display: flex; flex-direction: column; gap: 6px; }
+    .game-row .img-inline img { max-height: 60px;  }
+    .game-row .actions { display: flex; flex-direction: column; gap: 6px; }
+    .clicks { text-align: center; font-size: 12px; color: var(--text-2); padding-top: 20px; }
+    .empty { text-align: center; color: var(--text-3); padding: 30px 0; }
+
+    @media (max-width: 900px) {
+      .game-row { grid-template-columns: 1fr; }
+      .game-row .thumb { width: 100%; height: auto; max-height: 140px; }
+    }
+
+    /* Modal */
+    .modal-backdrop {
+      position: fixed; inset: 0; background: rgba(0, 0, 0, 0.55);
+      display: flex; align-items: center; justify-content: center; z-index: 50; padding: 20px;
+    }
+    .modal-backdrop[hidden] { display: none; }
+    .modal {
+      background: var(--bg-2); border: 1px solid var(--border-2); 
+      padding: 20px; width: 100%; max-width: 520px; max-height: 90vh; overflow: auto;
+    }
+    .modal h3 { margin-bottom: 14px; }
+    .modal .field { margin-bottom: 12px; }
+    .modal .field label { display: block; font-size: 12px; color: var(--text-2); margin-bottom: 4px; font-weight: 600; }
+    .modal .field input, .modal .field textarea { width: 100%; }
+    .modal .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 16px; }
+
+    /* R2 tree */
+    .tree { font-family: ui-monospace, 'JetBrains Mono', monospace; font-size: 13px; }
+    .tree ul { list-style: none; padding-left: 18px; }
+    .tree li { padding: 2px 0; }
+    .tree .dir > .node { cursor: pointer; color: var(--accent-2); font-weight: 600; }
+    .tree .file { color: var(--text-2); display: flex; gap: 8px; align-items: baseline; }
+    .tree .file .size { color: var(--text-3); font-size: 11px; }
+    .tree .file .name { word-break: break-all; }
+
+    /* Export */
+    .export-actions { display: flex; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
+    textarea.data {
+      width: 100%; min-height: 320px; font-family: ui-monospace, monospace; font-size: 12px;
+      resize: vertical;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="header">
+    <h1>⚙ admin panel</h1>
+    <a href="/">← back to games</a>
+    <button class="btn-ghost" id="logout-btn" hidden>Log out</button>
+  </div>
+
+  <div class="login-center" id="login-view">
+    <div class="card login-box">
+      <h1>Admin Panel</h1>
+      <p class="muted">Enter the password, buddy. It ain't that easy.</p>
+      <form id="login-form">
+        <input type="password" id="password-input" placeholder="Password" autocomplete="current-password" autofocus />
+        <button class="btn" type="submit">Unlock</button>
+      </form>
+      <div class="msg" id="login-msg"></div>
+    </div>
+  </div>
+
+  <div class="wrap" id="panel-view" hidden>
+    <div class="tabs">
+      <button data-tab="games" class="active">Games</button>
+      <button data-tab="r2">R2 Files</button>
+      <button data-tab="export">Export JSON</button>
+    </div>
+
+    <!-- Games -->
+    <section id="tab-games">
+      <div class="toolbar">
+        <input type="search" id="game-search" placeholder="Search games…" />
+        <button class="btn" id="add-game-btn">＋ Add Game</button>
+        <button class="btn-ghost" id="refresh-btn">Refresh</button>
+      </div>
+      <div id="games-list"></div>
+    </section>
+
+    <!-- R2 -->
+    <section id="tab-r2" hidden>
+      <div class="toolbar">
+        <button class="btn" id="tree-btn">Load R2 files</button>
+      </div>
+      <div class="card">
+        <div class="tree" id="r2-tree"></div>
+      </div>
+    </section>
+
+    <!-- Export -->
+    <section id="tab-export" hidden>
+      <div class="card">
+        <div class="export-actions">
+          <button class="btn" id="export-fetch-btn">Load games</button>
+          <button class="btn-ghost" id="export-copy-btn">Copy</button>
+          <button class="btn-ghost" id="export-download-btn">Download .json</button>
+        </div>
+        <textarea class="data" id="export-data" placeholder="Load the games data to see it here…"></textarea>
+        <div class="msg" id="export-msg"></div>
+      </div>
+    </section>
+  </div>
+
+  <div class="modal-backdrop" id="modal-backdrop" hidden>
+    <div class="modal">
+      <h3 id="modal-title">Add Game</h3>
+      <div class="field">
+        <label for="f-id">ID</label>
+        <input id="f-id" placeholder="my_game_id" required />
+      </div>
+      <div class="field">
+        <label for="f-name">Name</label>
+        <input id="f-name" placeholder="My Cool Game" required />
+      </div>
+      <div class="field">
+        <label for="f-desc">Description</label>
+        <textarea id="f-desc" rows="2" placeholder="What is it?" required></textarea>
+      </div>
+      <div class="field">
+        <label for="f-link">URL</label>
+        <input id="f-link" placeholder="https://… or /page.html" required />
+      </div>
+      <div class="field">
+        <label for="f-img">Image URL</label>
+        <input id="f-img" placeholder="https://…" required />
+      </div>
+      <div class="field">
+        <label for="f-keywords">Keywords</label>
+        <input id="f-keywords" placeholder="arcade, action, 2d (comma separated)" />
+      </div>
+      <div class="modal-actions">
+        <button class="btn-ghost" id="modal-cancel">Cancel</button>
+        <button class="btn" id="modal-save">Save</button>
+      </div>
+      <div class="msg" id="modal-msg"></div>
+    </div>
+  </div>
+
+  <script>
+    const $ = (sel) => document.querySelector(sel);
+
+    const state = { games: [], clicks: {}, editingId: null };
+
+    async function api(path, body, method = 'POST') {
+      const res = await fetch(path, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify(body),
+      });
+      const data = await res.json().catch(() => null);
+      if (res.status === 401) throw new Error('Unauthorized');
+      if (!res.ok) throw new Error((data && data.error) || `Request failed (${res.status})`);
+      return data;
+    }
+
+    async function verifySession() {
+      try {
+        await api('/api/admin/games/json', {});
+        return true;
+      } catch {
+        return false;
+      }
+    }
+
+    // ---- Login ----
+    $('#login-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const password = $('#password-input').value;
+      const msg = $('#login-msg');
+      msg.className = 'msg';
+      msg.textContent = '';
+      try {
+        const res = await fetch('/api/admin/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain' },
+          credentials: 'same-origin',
+          body: password,
+        });
+        $('#password-input').value = '';
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Unauthorized');
+        await enterPanel();
+      } catch (err) {
+        $('#password-input').value = '';
+        msg.className = 'msg err';
+        msg.textContent = err.message;
+      }
+    });
+
+    $('#logout-btn').addEventListener('click', async () => {
+      try {
+        const res = await fetch('/api/admin/logout', {
+          method: 'POST',
+          credentials: 'same-origin',
+        });
+        if (!res.ok) throw new Error('Could not log out. Please try again.');
+      } catch (err) {
+        alert(err.message);
+        return;
+      }
+      location.reload();
+    });
+
+    async function enterPanel() {
+      const ok = await verifySession();
+      if (!ok) {
+        $('#login-view').hidden = false;
+        $('#panel-view').hidden = true;
+        $('#logout-btn').hidden = true;
+        return;
+      }
+      $('#login-view').hidden = true;
+      $('#panel-view').hidden = false;
+      $('#logout-btn').hidden = false;
+      await Promise.all([loadGames(), loadClicks()]);
+      switchTab('games');
+    }
+
+    // ---- Tabs ----
+    document.querySelectorAll('.tabs button').forEach((btn) => {
+      btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+    });
+
+    function switchTab(tab) {
+      document.querySelectorAll('.tabs button').forEach((b) => b.classList.toggle('active', b.dataset.tab === tab));
+      for (const t of ['games', 'r2', 'export']) {
+        $('#tab-' + t).hidden = t !== tab;
+      }
+    }
+
+    // ---- Games ----
+    async function loadGames() {
+      const data = await api('/api/admin/games/json', {});
+      state.games = JSON.parse(data.data || '[]');
+      renderGames();
+    }
+
+    async function loadClicks() {
+      try {
+        const res = await fetch('/games/json');
+        const rows = await res.json();
+        state.clicks = {};
+        for (const g of rows) state.clicks[g.id] = g.clicks;
+      } catch {
+        state.clicks = {};
+      }
+    }
+
+    function esc(s) {
+      return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    const fmtSize = (n) => {
+      if (!n && n !== 0) return '';
+      const units = ['B', 'KB', 'MB', 'GB'];
+      let i = 0;
+      while (n >= 1024 && i < units.length - 1) { n /= 1024; i++; }
+      return `${n.toFixed(n < 10 && i > 0 ? 1 : 0)} ${units[i]}`;
+    };
+
+    function renderGames(filter = '') {
+      const list = $('#games-list');
+      const needle = filter.toLowerCase();
+      const rows = state.games.filter((g) =>
+        !needle ||
+        (g.id || '').toLowerCase().includes(needle) ||
+        (g.name || '').toLowerCase().includes(needle) ||
+        (g.description || '').toLowerCase().includes(needle) ||
+        (g.keywords || '').toLowerCase().includes(needle)
+      );
+      const withClicks = rows.map((g) => ({ ...g, clicks: state.clicks[g.id] || 0 }));
+      withClicks.sort((a, b) => b.clicks - a.clicks || String(a.name || '').localeCompare(String(b.name || '')));
+
+      if (withClicks.length === 0) {
+        list.innerHTML = '<div class="empty">No games found.</div>';
+        return;
+      }
+
+      list.innerHTML = withClicks.map((g) => `
+        <div class="game-row" data-id="${esc(g.id)}">
+          <div class="img-inline">
+            <img src="${esc(g.img)}" onerror="this.style.visibility='hidden'" alt="" />
+          </div>
+          <div class="field">
+            <label>ID</label>
+            <input class="g-id" value="${esc(g.id)}" readonly />
+          </div>
+          <div class="field">
+            <label>Name</label>
+            <input class="g-name" value="${esc(g.name)}" />
+          </div>
+          <div class="field">
+            <label>Description</label>
+            <input class="g-desc" value="${esc(g.description)}" />
+          </div>
+          <div class="field">
+            <label>URL</label>
+            <input class="g-link" value="${esc(g.url)}" />
+          </div>
+          <div class="field">
+            <label>Keywords</label>
+            <input class="g-keywords" value="${esc(g.keywords)}" />
+          </div>
+          <div class="clicks">${Number(g.clicks || 0).toLocaleString()} clicks</div>
+          <div class="actions">
+            <button class="btn edit-game">Edit</button>
+            <button class="btn save-game">Save</button>
+            <button type="button" class="btn set-banner-game${g.banner ? ' is-selected' : ''}" aria-pressed="${g.banner}" ${g.banner ? 'disabled' : ''}>${g.banner ? 'Banner selected' : 'Set banner'}</button>
+            <button class="btn-danger delete-game">Delete</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function gameRowOf(btn) { return btn.closest('.game-row'); }
+
+    $('#games-list').addEventListener('click', async (e) => {
+      const row = gameRowOf(e.target);
+      if (!row) return;
+      const gameId = row.dataset.id;
+      if (e.target.classList.contains('delete-game')) {
+        if (!confirm(`Delete "${row.querySelector('.g-name').value}" (${gameId})?`)) return;
+        try {
+          await api(`/api/admin/games/${encodeURIComponent(gameId)}`, {}, 'DELETE');
+          await loadGames();
+        } catch (err) {
+          alert(err.message);
+        }
+      } else if (e.target.classList.contains('edit-game')) {
+        const original = state.games.find((g) => g.id === gameId) || {};
+        openModal(original);
+      } else if (e.target.classList.contains('save-game')) {
+        const original = state.games.find((g) => g.id === gameId) || {};
+        const body = {
+          name: row.querySelector('.g-name').value,
+          desc: row.querySelector('.g-desc').value,
+          link: row.querySelector('.g-link').value,
+          img: original.img || '',
+          keywords: row.querySelector('.g-keywords').value,
+        };
+        try {
+          await api(`/api/admin/games/update/${encodeURIComponent(gameId)}`, body, 'PATCH');
+          e.target.textContent = 'Saved ✓';
+          setTimeout(() => { e.target.textContent = 'Save'; }, 1500);
+          await loadClicks();
+        } catch (err) {
+          alert(err.message);
+        }
+      } else if (e.target.classList.contains('set-banner-game')) {
+        try {
+          await api('/api/admin/banner', { gameId }, 'POST');
+          await loadGames();
+        } catch (err) {
+          alert(err.message);
+        }
+      }
+    });
+
+    $('#game-search').addEventListener('input', (e) => renderGames(e.target.value));
+    $('#refresh-btn').addEventListener('click', async () => { await loadGames(); await loadClicks(); });
+
+    // ---- Add / Edit modal ----
+    const modal = $('#modal-backdrop');
+    function openModal(editing) {
+      state.editingId = editing ? editing.id : null;
+      $('#modal-title').textContent = editing ? `Edit: ${editing.name}` : 'Add Game';
+      $('#f-id').value = editing ? editing.id : '';
+      $('#f-id').readOnly = !!editing;
+      $('#f-name').value = editing ? editing.name : '';
+      $('#f-desc').value = editing ? editing.description : '';
+      $('#f-link').value = editing ? editing.url : '';
+      $('#f-img').value = editing ? editing.img : '';
+      $('#f-keywords').value = editing ? editing.keywords : '';
+      $('#modal-msg').textContent = '';
+      $('#modal-msg').className = 'msg';
+      modal.hidden = false;
+      $('#f-id').focus();
+    }
+    function closeModal() { modal.hidden = true; state.editingId = null; }
+
+    $('#add-game-btn').addEventListener('click', () => openModal(null));
+    $('#modal-cancel').addEventListener('click', closeModal);
+    modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+
+    $('#modal-save').addEventListener('click', async () => {
+      const msg = $('#modal-msg');
+      const body = {
+        id: $('#f-id').value.trim(),
+        name: $('#f-name').value,
+        desc: $('#f-desc').value,
+        link: $('#f-link').value,
+        img: $('#f-img').value,
+        keywords: $('#f-keywords').value,
+      };
+      try {
+        if (state.editingId) {
+          await api(`/api/admin/games/update/${encodeURIComponent(state.editingId)}`, body, 'PATCH');
+        } else {
+          await api('/api/admin/games', body, 'POST');
+        }
+        msg.className = 'msg ok';
+        msg.textContent = 'Saved ✓';
+        await loadGames();
+        setTimeout(closeModal, 600);
+      } catch (err) {
+        msg.className = 'msg err';
+        msg.textContent = err.message;
+      }
+    });
+
+    // ---- R2 tree ----
+    $('#tree-btn').addEventListener('click', async () => {
+      const treeEl = $('#r2-tree');
+      treeEl.textContent = 'Loading…';
+      try {
+        const tree = await api('/api/admin/r2/tree', {});
+        treeEl.innerHTML = '';
+        treeEl.appendChild(renderTree(tree));
+      } catch (err) {
+        treeEl.textContent = 'Error: ' + err.message;
+      }
+    });
+
+    function renderTree(node) {
+      const ul = document.createElement('ul');
+      for (const [key, value] of Object.entries(node || {})) {
+        const li = document.createElement('li');
+        if (value && value.type === 'file') {
+          li.className = 'file';
+          li.innerHTML = `<span class="name">📄 ${esc(key)}</span><span class="size">${fmtSize(value.size)}</span>`;
+        } else {
+          li.className = 'dir';
+          const label = document.createElement('span');
+          label.className = 'node';
+          label.textContent = '📁 ' + key;
+          const sub = renderTree(value);
+          sub.hidden = true;
+          label.addEventListener('click', () => { sub.hidden = !sub.hidden; });
+          li.appendChild(label);
+          li.appendChild(sub);
+        }
+        ul.appendChild(li);
+      }
+      return ul;
+    }
+
+    // ---- Export ----
+    $('#export-fetch-btn').addEventListener('click', async () => {
+      const data = await api('/api/admin/games/json', {});
+      const pretty = JSON.stringify(JSON.parse(data.data || '[]'), null, 2);
+      $('#export-data').value = pretty;
+      setExportMsg('Loaded ✓', 'ok');
+    });
+
+    $('#export-copy-btn').addEventListener('click', async () => {
+      const el = $('#export-data');
+      if (!el.value) return;
+      await navigator.clipboard.writeText(el.value);
+      setExportMsg('Copied to clipboard ✓', 'ok');
+    });
+
+    $('#export-download-btn').addEventListener('click', () => {
+      const el = $('#export-data');
+      if (!el.value) return;
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([el.value], { type: 'application/json' }));
+      a.download = `games-${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+      setExportMsg('Downloaded ✓', 'ok');
+    });
+
+    function setExportMsg(text, kind) {
+      const msg = $('#export-msg');
+      msg.className = 'msg ' + (kind || '');
+      msg.textContent = text;
+    }
+
+    // ---- Boot ----
+    (async () => {
+      await enterPanel();
+    })();
+  </script>
+<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/vce701823e78c4301a35b7e07294d87301792088814092" integrity="sha512-UKNk8GbxkABxKcXYuLkO16EleLGUkcvJWtpSNmExE0Too3ZaFAxTscNWEc1OdAv5/BikHawapSCaiD2XCmp+Bw==" data-cf-beacon='{"version":"2024.11.0","token":"84e1a7b89cb741959840b1386d0c1380","r":1,"spa":2}' crossorigin="anonymous"></script>
+</body>
+
+</html>

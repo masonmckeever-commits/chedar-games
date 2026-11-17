@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NDS Emulator</title>
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background: #222;
+        }
+
+        #game {
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div id="game"></div>
+
+    <script>
+        EJS_player = "#game";
+        EJS_core = "nds";
+        EJS_gameUrl = "/roms/NSMB.nds";
+        EJS_pathtodata = "https://cdn.emulatorjs.org/stable/data/";
+        EJS_startOnLoaded = true;
+    </script>
+
+    <script src="https://cdn.emulatorjs.org/stable/data/loader.js"></script>
+
+    <script>
+        (function () {
+            var polls = 0;
+            function gameManager() {
+                return window.EJS_emulator && window.EJS_emulator.gameManager
+                    ? window.EJS_emulator.gameManager
+                    : null;
+            }
+            function whenReady(cb) {
+                var gm = gameManager();
+                if (gm || polls++ > 100) return cb(gm);
+                setTimeout(function () { whenReady(cb); }, 50);
+            }
+
+            window.addEventListener("message", function (e) {
+                var d = e.data;
+                if (e.source !== window.parent || !d || typeof d !== "object") return;
+
+                if (d.type === "ejs-save") {
+                    whenReady(function (gm) {
+                        var state = null;
+                        if (gm && typeof gm.getState === "function") {
+                            try {
+                                var s = gm.getState();
+                                if (s instanceof Uint8Array && s.length) state = s;
+                            } catch (err) {}
+                        }
+                        e.source.postMessage({ type: "ejs-save-result", ok: !!state, state: state }, "*");
+                    });
+                } else if (d.type === "ejs-load") {
+                    whenReady(function (gm) {
+                        var ok = false;
+                        if (gm && typeof gm.loadState === "function" && d.state) {
+                            try {
+                                gm.loadState(new Uint8Array(d.state));
+                                ok = true;
+                            } catch (err) {}
+                        }
+                        e.source.postMessage({ type: "ejs-load-result", ok: ok }, "*");
+                    });
+                }
+            });
+        })();
+    </script>
+<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/vce701823e78c4301a35b7e07294d87301792088814092" integrity="sha512-UKNk8GbxkABxKcXYuLkO16EleLGUkcvJWtpSNmExE0Too3ZaFAxTscNWEc1OdAv5/BikHawapSCaiD2XCmp+Bw==" data-cf-beacon='{"version":"2024.11.0","token":"84e1a7b89cb741959840b1386d0c1380","r":1,"spa":2}' crossorigin="anonymous"></script>
+</body>
+</html>

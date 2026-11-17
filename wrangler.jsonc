@@ -1,0 +1,37 @@
+{
+  "name": "chedargames",
+  "main": "src/index.js",
+  "compatibility_date": "2024-06-01",
+  "routes": [
+    { "pattern": "games.chedar.dev", "custom_domain": true }
+  ],
+  "compatibility_flags": [
+    "global_fetch_strictly_public"
+  ],
+  "secrets": {
+    "required": ["ADMIN_PASSWORD"]
+  },
+  "assets": {
+    "directory": "./public"
+  },
+  "observability": {
+    "enabled": true
+  },
+  "d1_databases": [
+    {
+      "binding": "GAMES",
+      "database_name": "games",
+      "database_id": "bf68331c-2063-477b-89b0-b78dc18e5cb2"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "R2",
+      "bucket_name": "ebooks"
+    },
+    {
+      "binding": "ROMS",
+      "bucket_name": "2ds-game-roms"
+    }
+  ]
+}
