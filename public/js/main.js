@@ -1164,7 +1164,7 @@ let analyser = null;
   function tick(ts) {
     if (rafId === null) return;
 
-    if (ts - lastFrame < 80) {
+    if (ts - lastFrame < 1000 / 60) {
       rafId = requestAnimationFrame(tick);
       return;
     }
