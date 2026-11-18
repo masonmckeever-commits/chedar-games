@@ -616,6 +616,10 @@ app.get("/api/quote", (c) => {
   return c.json({ quote: randomQuote });
 });
 
+app.get("/favicon.ico", async (c) => {
+  return c.status(200)
+})
+
 app.get("*", async (c) => {
   const response = await c.env.ASSETS.fetch(c.req.raw);
 

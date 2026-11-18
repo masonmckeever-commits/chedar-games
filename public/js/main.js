@@ -23,7 +23,7 @@ const qotdElement = document.getElementById('qotd');
 
 const { openBlankTab } = await import('./module/private.js'); 
 
-if (window.location.href.includes('?secret')) { 
+if (window.location.href.includes('?private')) { 
   openBlankTab('https://games.chedar.dev/'); 
   window.close();
 }
@@ -1082,15 +1082,18 @@ let analyser = null;
   const visualizerContext = visualizer?.getContext('2d') || null;
   beatContext = new AudioCtx();
   const source = beatContext.createMediaElementSource(audio);
-  const musicFilter = beatContext.createBiquadFilter();
-  musicFilter.type = 'lowpass';
-  musicFilter.frequency.value = 500;
+  
+  const muffledFilter = beatContext.createBiquadFilter();
+  muffledFilter.type = 'lowpass';
+  muffledFilter.frequency.value = 300;
+
   analyser = beatContext.createAnalyser();
   analyser.fftSize = 512;
-  analyser.smoothingTimeConstant = 0.8;
-  source.connect(musicFilter);
-  musicFilter.connect(analyser);
-  analyser.connect(beatContext.destination);
+  analyser.smoothingTimeConstant = 0.2;
+
+  source.connect(analyser);
+  analyser.connect(muffledFilter);
+  muffledFilter.connect(beatContext.destination);
 
   const freqData = new Uint8Array(analyser.frequencyBinCount);
   const timeData = new Uint8Array(analyser.fftSize);
@@ -1125,22 +1128,27 @@ let analyser = null;
     const pixelRatio = window.devicePixelRatio || 1;
     const snapToPixel = value => Math.round(value * pixelRatio) / pixelRatio;
     const maxBin = Math.min(96, freqData.length - 1);
-    const barCount = Math.max(1, Math.floor(width / 4));
-    const slotWidth = width / barCount;
-    const barWidth = Math.max(1 / pixelRatio, snapToPixel(slotWidth * 0.7));
     visualizerContext.clearRect(0, 0, width, height);
-    visualizerContext.fillStyle = getComputedStyle(visualizer).color;
+    const lineGradient = visualizerContext.createLinearGradient(0, height, 0, 0);
+    lineGradient.addColorStop(0, '#4da6ff');
+    lineGradient.addColorStop(0.6, '#ffe066');
+    lineGradient.addColorStop(1, '#ff5533');
+    visualizerContext.strokeStyle = lineGradient;
+    visualizerContext.lineWidth = 2;
+    visualizerContext.lineCap = 'round';
+    visualizerContext.lineJoin = 'round';
+    visualizerContext.beginPath();
 
-    for (let index = 0; index < barCount; index++) {
-      const position = (index + 1) / barCount;
-      const bin = Math.max(1, Math.floor(position * maxBin));
+    for (let bin = 1; bin <= maxBin; bin++) {
+      const x = snapToPixel(((bin - 1) / (maxBin - 1)) * width);
       const level = freqData[bin] / 255;
-      const barHeight = snapToPixel(Math.max(0, (level - 0.1) * height * 0.5));
-      if (barHeight === 0) continue;
-
-      const x = snapToPixel(index * slotWidth + (slotWidth - barWidth) / 2);
-      visualizerContext.fillRect(x, snapToPixel(height - barHeight), barWidth, barHeight);
+      const graphHeight = Math.max(0, (level - 0.1) * height);
+      const y = snapToPixel(Math.min(height - 1, height - graphHeight));
+      if (bin === 1) visualizerContext.moveTo(x, y);
+      else visualizerContext.lineTo(x, y);
     }
+
+    visualizerContext.stroke();
   }
 
   let rafId = null;
