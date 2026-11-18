@@ -591,6 +591,31 @@ app.post("/api/block-blast/leaderboard", async (c) => {
   }
 });
 
+const quotes = [
+  "\"Don't forget how to code. AI won't build illegal apps, you will.\" - @TheSpacerr",
+  "\"There are only two kinds of languages: the ones people complain about and the ones nobody uses.\" — Bjarne Stroustrup",
+  "\"If debugging is the process of removing software bugs, then programming must be the process of putting them in.\" — Edsger Dijkstra",
+  "\"Some people, when confronted with a problem, think 'I know, I'll use regular expressions.' Now they have two problems.\" — Jamie Zawinski",
+  "\"It's not a bug — it's an undocumented feature.\" — Anonymous",
+  "\"Always code as if the guy who ends up maintaining your code will be a violent psychopath who knows where you live.\" — John Woods",
+  "\"Give a man a program, frustrate him for a day. Teach a man to program, frustrate him for a lifetime.\" — Muhammad Waseem",
+  "\"A good programmer is someone who always looks both ways before crossing a one-way street.\" — Doug Linder",
+  "\"There are two ways to write error-free programs; only the third one works.\" — Alan J. Perlis",
+  "\"Debugging is like being the detective in a crime movie where you are also the murderer.\" — Filipe Fortes",
+  "\"Walking on water and developing software from a specification are easy if both are frozen.\" — Edward V. Berard",
+  "\"C makes it easy to shoot yourself in the foot; C++ makes it harder, but when you do it blows your whole leg off.\" — Bjarne Stroustrup",
+  "\"In theory, theory and practice are the same. In practice, they're not.\" — Yogi Berra",
+  "\"Software and cathedrals are much the same – first we build them, then we pray.\" — Sam Redwine",
+  "\"The best performance improvement is the transition from the nonworking state to the working state.\" — J. Osterhout",
+  "\"Software comes from heaven when you have good hardware.\" — Ken Olsen",
+  "\"Copy-and-Paste was programmed by programmers for programmers actually.\" — Anonymous"
+]
+
+app.get("/api/quote", (c) => {
+  const randomQuote = quotes[Math.floor(Math.random() * quotes.length)];
+  return c.json({ quote: randomQuote });
+});
+
 app.get("*", async (c) => {
   const response = await c.env.ASSETS.fetch(c.req.raw);
 

@@ -125,6 +125,8 @@ img {
 #header-window {
     min-height: var(--header-h);
     flex-shrink: 0;
+    min-width: 0;
+    width: 100%;
     background: var(--paper);
     border-bottom: 2px solid var(--ink-page);
     display: flex;
@@ -141,6 +143,7 @@ img {
     justify-content: center;
     height: var(--header-h);
     width: 100%;
+    min-width: 0;
     gap: 12px;
     flex-shrink: 0;
 }
@@ -149,8 +152,18 @@ img {
     display: flex;
     align-items: center;
     gap: 12px;
-    flex: 1;
+    flex: 0 1 auto;
     min-width: 0;
+}
+
+.audio-visualizer {
+    display: block;
+    flex: 1 1 80px;
+    min-width: 64px;
+    width: 100%;
+    height: 34px;
+    color: var(--accent);
+    pointer-events: none;
 }
 
 .header-right {
@@ -236,7 +249,8 @@ img {
 }
 
 .search-bar {
-    flex: 1;
+    flex: 1 1 280px;
+    min-width: 120px;
     max-width: 380px;
     height: 34px;
     background: var(--bg-2);
@@ -294,14 +308,17 @@ body::after {
 .desktop-container {
     display: grid;
     grid-template-rows: auto 1fr auto;
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     height: 100vh;
+    height: 100dvh;
     overflow: hidden;
 }
 
 .games-section {
     display: flex;
     flex-direction: column;
+    min-width: 0;
+    min-height: 0;
     overflow-y: auto;
     padding: 24px 28px;
     background: none;
@@ -1269,15 +1286,53 @@ body::after {
         --nav-w: 0px;
     }
 
+    .header-content {
+        height: auto;
+        min-height: 0;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        justify-content: stretch;
+        gap: 8px;
+        padding: 8px 12px;
+    }
+
+    .header-left {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 8px;
+        width: 100%;
+    }
+
+    .audio-visualizer {
+        grid-column: 1;
+        flex: none;
+        min-width: 0;
+        height: 20px;
+    }
+
     .header-title {
+        grid-column: 1 / -1;
         width: auto;
-        padding: 0 14px;
+        height: auto;
+        padding: 0;
         border-right: none;
         font-size: 16px;
     }
 
     .search-bar {
+        width: 100%;
+        min-width: 0;
         max-width: 100%;
+    }
+
+    .sort-select {
+        max-width: 110px;
+    }
+
+    .header-right {
+        width: 100%;
+        justify-content: flex-start;
+        flex-wrap: wrap;
     }
 
     .games-section {
@@ -1290,11 +1345,15 @@ body::after {
     }
 
     .game-card img {
-        height: 120px;
+        height: auto;
     }
 
     .sidebar {
         display: none !important;
+    }
+
+    .popup-header {
+        display: flex;
     }
 
     .disclosure {
@@ -1827,12 +1886,31 @@ button:not(:disabled):active,
     background: var(--paper);
     border: 2px solid var(--ink-accent);
     box-shadow: 4px 4px 0 var(--ink-accent);
-    padding: 38px;
-    max-width: 90%;
+    box-sizing: border-box;
+    padding: clamp(16px, 4vw, 38px);
+    width: min(700px, calc(100vw - 32px));
+    height: min(600px, calc(100vh - 32px));
+    height: min(600px, calc(100dvh - 32px));
     display: flex;
     flex-direction: column;
-    width: auto;
-    height: 600px;
+    overflow: hidden;
+}
+
+.notif-scroll {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 0 10px 24px 0;
+}
+
+.notif-scroll h4 {
+    font-size: clamp(1.25rem, 5vw, 2rem);
+}
+
+.notif-scroll.has-more-below {
+    -webkit-mask-image: linear-gradient(to bottom, #000 0, #000 calc(100% - 32px), transparent 100%);
+    mask-image: linear-gradient(to bottom, #000 0, #000 calc(100% - 32px), transparent 100%);
 }
 
 .notif.is-closing {
@@ -1863,7 +1941,8 @@ hr {
 }
 
 .notif-content>button {
-    margin-top: auto;
+    flex: 0 0 auto;
+    margin-top: 12px;
     width: 80px;
     height: 40px;
     border: 2px solid var(--ink-accent);
@@ -2136,4 +2215,11 @@ hr {
     .case-reel-item img {
         height: 72px;
     }
+}
+
+.np-text {
+    font-size: 12px;
+    color: var(--text-2);
+    text-align: center;
+    margin-top: 6px;
 }

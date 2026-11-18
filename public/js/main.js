@@ -109,6 +109,7 @@ function init() {
     const popup = document.getElementById('popup');
     const closePopupBtn = document.getElementById('close-popup');
     const notification = document.querySelector('.notif');
+    const notificationContent = notification.querySelector('.notif-scroll');
     const notificationCloseBtn = document.getElementById('notification-close');
     const gameIframe = document.getElementById('game-iframe');
     const gamesGrid = document.getElementById('games-grid');
@@ -311,6 +312,16 @@ function init() {
       }, { once: true });
     }
 
+    function updateNotificationScrollFade() {
+      const hasMoreBelow = notificationContent.scrollHeight >
+        notificationContent.clientHeight + notificationContent.scrollTop + 1;
+      notificationContent.classList.toggle('has-more-below', hasMoreBelow);
+    }
+
+    notificationContent.addEventListener('scroll', updateNotificationScrollFade, { passive: true });
+    window.addEventListener('resize', updateNotificationScrollFade);
+    updateNotificationScrollFade();
+
     notificationCloseBtn.addEventListener('click', closeNotification);
 
     (function () {
@@ -359,6 +370,7 @@ function init() {
       function launchGame(card, url, gameId, openPopupFn) {
         if (launchTimeout) clearTimeout(launchTimeout);
 
+        muteAudio();
 
 
         const rect = getCardRect(card);
@@ -506,7 +518,7 @@ function init() {
       saveStateSection.hidden = true;
       ssStatus.textContent = '';
       if (document.fullscreenElement) document.exitFullscreen().catch(() => { });
-      unmuteAudio();
+      unmuteAudio(true);
     }
 
     if (bannerPlay && bannerGame) {
@@ -987,14 +999,56 @@ if (bootSequence) {
 
 // AUDIO
 
-const audio = document.getElementById('theme-audio');
+const audio = window.bgm || document.getElementById('theme-audio');
+const AUDIO_FADE_DURATION = 1000;
+let audioFadeFrame = null;
+let audioMutedForGame = false;
+let audioVolumeBeforeGame = audio?.volume ?? 1;
+let audioWasPlayingBeforeGame = false;
 
-function muteAudio() {
-  return 'Removed'
+function fadeAudioTo(targetVolume, onComplete) {
+  if (!audio) return;
+
+  if (audioFadeFrame !== null) cancelAnimationFrame(audioFadeFrame);
+
+  const startVolume = audio.volume;
+  const startTime = performance.now();
+
+  function step(now) {
+    const progress = Math.min((now - startTime) / AUDIO_FADE_DURATION, 1);
+    audio.volume = startVolume + (targetVolume - startVolume) * progress;
+
+    if (progress < 1) {
+      audioFadeFrame = requestAnimationFrame(step);
+      return;
+    }
+
+    audioFadeFrame = null;
+    if (onComplete) onComplete();
+  }
+
+  audioFadeFrame = requestAnimationFrame(step);
 }
 
-function unmuteAudio() {
-  return 'Removed'
+function muteAudio() {
+  if (!audio || audioMutedForGame) return;
+
+  audioMutedForGame = true;
+  audioVolumeBeforeGame = audio.volume;
+  audioWasPlayingBeforeGame = !audio.paused;
+  if (!audioWasPlayingBeforeGame) return;
+
+  fadeAudioTo(0, () => audio.pause());
+}
+
+function unmuteAudio(force = false) {
+  if (!audio || !audioMutedForGame || force !== true) return;
+
+  audioMutedForGame = false;
+  if (audioWasPlayingBeforeGame) {
+    audio.play().catch(error => console.error('Could not resume background music.', error));
+    fadeAudioTo(audioVolumeBeforeGame);
+  }
 }
 
 const interactionEvents = ['click', 'keydown'];
@@ -1024,16 +1078,70 @@ let analyser = null;
   const AudioCtx = window.AudioContext || window.webkitAudioContext;
   if (!audio || !AudioCtx) return;
 
+  const visualizer = document.getElementById('audio-visualizer');
+  const visualizerContext = visualizer?.getContext('2d') || null;
   beatContext = new AudioCtx();
   const source = beatContext.createMediaElementSource(audio);
+  const musicFilter = beatContext.createBiquadFilter();
+  musicFilter.type = 'lowpass';
+  musicFilter.frequency.value = 500;
   analyser = beatContext.createAnalyser();
   analyser.fftSize = 512;
   analyser.smoothingTimeConstant = 0.8;
-  source.connect(analyser);
+  source.connect(musicFilter);
+  musicFilter.connect(analyser);
   analyser.connect(beatContext.destination);
 
   const freqData = new Uint8Array(analyser.frequencyBinCount);
   const timeData = new Uint8Array(analyser.fftSize);
+
+  function resizeVisualizer() {
+    if (!visualizer || !visualizerContext) return null;
+
+    const bounds = visualizer.getBoundingClientRect();
+    const pixelRatio = window.devicePixelRatio || 1;
+    const width = Math.max(1, Math.round(bounds.width * pixelRatio));
+    const height = Math.max(1, Math.round(bounds.height * pixelRatio));
+
+    if (visualizer.width !== width || visualizer.height !== height) {
+      visualizer.width = width;
+      visualizer.height = height;
+      visualizerContext.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+    }
+
+    return { width: bounds.width, height: bounds.height };
+  }
+
+  function clearVisualizer() {
+    const bounds = resizeVisualizer();
+    if (bounds) visualizerContext.clearRect(0, 0, bounds.width, bounds.height);
+  }
+
+  function drawVisualizer() {
+    const bounds = resizeVisualizer();
+    if (!bounds || bounds.width === 0 || bounds.height === 0) return;
+
+    const { width, height } = bounds;
+    const pixelRatio = window.devicePixelRatio || 1;
+    const snapToPixel = value => Math.round(value * pixelRatio) / pixelRatio;
+    const maxBin = Math.min(96, freqData.length - 1);
+    const barCount = Math.max(1, Math.floor(width / 4));
+    const slotWidth = width / barCount;
+    const barWidth = Math.max(1 / pixelRatio, snapToPixel(slotWidth * 0.7));
+    visualizerContext.clearRect(0, 0, width, height);
+    visualizerContext.fillStyle = getComputedStyle(visualizer).color;
+
+    for (let index = 0; index < barCount; index++) {
+      const position = (index + 1) / barCount;
+      const bin = Math.max(1, Math.floor(position * maxBin));
+      const level = freqData[bin] / 255;
+      const barHeight = snapToPixel(Math.max(0, (level - 0.1) * height * 0.5));
+      if (barHeight === 0) continue;
+
+      const x = snapToPixel(index * slotWidth + (slotWidth - barWidth) / 2);
+      visualizerContext.fillRect(x, snapToPixel(height - barHeight), barWidth, barHeight);
+    }
+  }
 
   let rafId = null;
   let lastFrame = 0;
@@ -1042,6 +1150,7 @@ let analyser = null;
     cancelAnimationFrame(rafId);
     rafId = null;
     wallpaper.style.transform = '';
+    clearVisualizer();
   }
 
   function tick(ts) {
@@ -1055,6 +1164,7 @@ let analyser = null;
 
     analyser.getByteTimeDomainData(timeData);
     analyser.getByteFrequencyData(freqData);
+    drawVisualizer();
 
     let sum = 0;
     for (let i = 0; i < timeData.length; i++) {
@@ -1074,11 +1184,21 @@ let analyser = null;
     rafId = requestAnimationFrame(tick);
   }
 
+  function resumeBeatContext() {
+    if (beatContext.state !== 'running') {
+      beatContext.resume().catch(error => console.error('Could not resume the audio context.', error));
+    }
+  }
+
   audio.addEventListener('play', () => {
+    resumeBeatContext();
     cancelAnimationFrame(rafId);
     lastFrame = 0;
     rafId = requestAnimationFrame(tick);
   });
+  document.addEventListener('pointerdown', resumeBeatContext);
+  document.addEventListener('keydown', resumeBeatContext);
+  if (!audio.paused) resumeBeatContext();
   audio.addEventListener('pause', stop);
   audio.addEventListener('ended', stop);
 })();

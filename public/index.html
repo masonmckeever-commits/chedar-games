@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="UTF-8" />
-  
+
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>chedar games</title>
   <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/5930/5930147.png" type="image/png" />
@@ -35,14 +35,81 @@
     }
   </style>
 
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-HBSF3L4VQR"></script>
-	<script>
-	window.dataLayer = window.dataLayer || [];
-	function gtag(){dataLayer.push(arguments);}
-	gtag('js', new Date());
+  <script>
+    (() => {
+      const musicBase = 'https://cdn.chedar.dev/music/';
+      const musicFiles = [
+        { name: '2am Chills', file: 'jazz.mp3' },
+        { name: 'A jazzy pidgeon knocks at your door', file: 'jazz2.mp3' },
+        { name: 'Many Men (Lofi)', file: 'music4.mp3' }
+      ];
+      const bgm = new Audio();
+      bgm.crossOrigin = 'anonymous';
+      bgm.loop = true;
+      bgm.volume = 0.8;
+      bgm.preload = 'none';
 
-	gtag('config', 'G-HBSF3L4VQR');
-	</script>
+      let trackIndex = Math.floor(Math.random() * musicFiles.length);
+      let startPending = false;
+
+      function updateNowPlaying() {
+        const label = document.getElementById('np-text');
+        if (label) label.textContent = `🎶 ${musicFiles[trackIndex].name}`;
+      }
+
+      function selectTrack() {
+        bgm.src = new URL(musicFiles[trackIndex].file, musicBase).href;
+        updateNowPlaying();
+      }
+
+      function removeStartListeners() {
+        window.removeEventListener('pointerdown', startAudio);
+        window.removeEventListener('keydown', startAudio);
+      }
+
+      async function startAudio() {
+        if (!bgm.paused) {
+          removeStartListeners();
+          return;
+        }
+        if (startPending) return;
+
+        startPending = true;
+        try {
+          await bgm.play();
+          removeStartListeners();
+        } catch (error) {
+          console.error('Could not start background music.', error);
+          if (error.name !== 'NotAllowedError' && musicFiles.length > 1) {
+            trackIndex = (trackIndex + 1) % musicFiles.length;
+            selectTrack();
+          }
+        } finally {
+          startPending = false;
+        }
+      }
+
+      selectTrack();
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', updateNowPlaying, { once: true });
+      } else {
+        updateNowPlaying();
+      }
+      window.bgm = bgm;
+      window.addEventListener('pointerdown', startAudio);
+      window.addEventListener('keydown', startAudio);
+    })();
+  </script>
+
+
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-HBSF3L4VQR"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { dataLayer.push(arguments); }
+    gtag('js', new Date());
+
+    gtag('config', 'G-HBSF3L4VQR');
+  </script>
 </head>
 
 <body>
@@ -65,6 +132,8 @@
             <option value="default">Latest</option>
           </select>
         </div>
+        <h3 class="np-text" id="np-text"></h3>
+        <canvas id="audio-visualizer" class="audio-visualizer" aria-hidden="true"></canvas>
         <div class="header-right">
           <button class="theme-toggle" id="theme-toggle" type="button" aria-pressed="false">
             <span class="theme-toggle-icon" aria-hidden="true"></span>
@@ -98,7 +167,8 @@
   <div class="case-opening-modal" id="case-opening-modal" role="dialog" aria-modal="true"
     aria-labelledby="case-opening-title" aria-describedby="case-opening-status" hidden>
     <div class="case-opening-panel">
-      <button class="case-opening-close" id="case-opening-close" type="button" aria-label="Close random game opening">×</button>
+      <button class="case-opening-close" id="case-opening-close" type="button"
+        aria-label="Close random game opening">×</button>
       <div class="case-reel" id="case-reel">
         <div class="case-reel-marker" aria-hidden="true"></div>
         <div class="case-reel-track" id="case-reel-track"></div>
@@ -109,28 +179,30 @@
 
   <div class="notif">
     <div class="notif-content">
-      <h1>LATEST UPDATES</h1>
-      <hr>
-      <h3 style="font-weight: 400;">
-        I had to remove some stuff so i decided to make it up to you guys.
-        <h4 style="font-size: 2rem; font-weight: 300;">Added the following <b>FULL</b> game ports:</h4>
-        <li>Minecraft 26.2</li>
-        <li>Half-Life</li>
-        <li>Doom</li>
-        <li>Fears To Fathom: Home Alone</li>
-        <li>Kerbal Space Program</li>
-        <li>Level Devil</li>
-        <li>GTA V (Don't try to run it on a chromebook)</li>
-        <li>Geometry Dash</li>
-        <li>CS2, Half-Life 2, Team Fortress 2, Lethal Company, OneShot: World Machine Edition, and PEAK.</li>
+      <div class="notif-scroll">
+        <h1>LATEST UPDATES</h1>
         <hr>
-        <li>Restyled the website to be WAY more appealing and smooth</li>
-        <li>Added a featured game banner</li>
-        <li>Added a random game button</li>
-        <li>Most games are now hosted on this site. Expect less outages.</li>
-        Thanks for all the support :)
-        <h3>ADD "?private" to the end of the URL to enable super duper untrackable mode</h3>
-      </h3>
+        <h3 style="font-weight: 400;">
+          I had to remove some stuff so i decided to make it up to you guys.
+          <h4 style="font-weight: 300;">Added the following <b>FULL</b> game ports:</h4>
+          <li>Minecraft 26.2</li>
+          <li>Half-Life</li>
+          <li>Doom</li>
+          <li>Fears To Fathom: Home Alone</li>
+          <li>Kerbal Space Program</li>
+          <li>Level Devil</li>
+          <li>GTA V (Don't try to run it on a chromebook)</li>
+          <li>Geometry Dash</li>
+          <li>CS2, Half-Life 2, Team Fortress 2, Lethal Company, OneShot: World Machine Edition, and PEAK.</li>
+          <hr>
+          <li>Restyled the website to be WAY more appealing and smooth</li>
+          <li>Added a featured game banner</li>
+          <li>Added a random game button</li>
+          <li>Most games are now hosted on this site. Expect less outages.</li>
+          Thanks for all the support :)
+          <h3>ADD "?private" to the end of the URL to enable super duper untrackable mode</h3>
+        </h3>
+      </div>
       <button id="notification-close" type="button">Close</button>
     </div>
   </div>
