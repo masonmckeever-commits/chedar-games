@@ -164,6 +164,8 @@ img {
     height: 34px;
     color: var(--accent);
     pointer-events: none;
+    -webkit-mask-image: linear-gradient(to right, transparent, #000 10px, #000 calc(100% - 10px), transparent);
+    mask-image: linear-gradient(to right, transparent, #000 10px, #000 calc(100% - 10px), transparent);
 }
 
 .header-right {
