@@ -13,8 +13,12 @@ let adminAuthTablesReady;
 
 app.use("*", async (c, next) => {
   await next();
-  c.header("Cross-Origin-Opener-Policy", "same-origin");
-  c.header("Cross-Origin-Embedder-Policy", "credentialless");
+
+  const hostname = new URL(c.req.url).hostname.toLowerCase();
+  if (hostname === "chedar.dev" || hostname.endsWith(".chedar.dev")) {
+    c.header("Cross-Origin-Opener-Policy", "same-origin");
+    c.header("Cross-Origin-Embedder-Policy", "credentialless");
+  }
 });
 
 function toHex(bytes) {
