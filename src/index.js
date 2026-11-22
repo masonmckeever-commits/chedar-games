@@ -11,6 +11,12 @@ const LOGIN_ATTEMPT_LIMIT = 5;
 const encoder = new TextEncoder();
 let adminAuthTablesReady;
 
+app.use("*", async (c, next) => {
+  await next();
+  c.header("Cross-Origin-Opener-Policy", "same-origin");
+  c.header("Cross-Origin-Embedder-Policy", "credentialless");
+});
+
 function toHex(bytes) {
   return [...bytes].map((byte) => byte.toString(16).padStart(2, "0")).join("");
 }
